@@ -1,0 +1,272 @@
+/* ═══════════════════════════════════════════════════════════════════
+   LEDGER PAGE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ledger {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem;
+  overflow: auto;
+}
+
+/* ─── Header ────────────────────────────────────────────────────── */
+.ledger__header {
+  margin-bottom: 1.5rem;
+}
+
+.ledger__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25rem 0;
+}
+
+.ledger__subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ─── Controls row ───────────────────────────────────────────────── */
+.ledger__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.ledger__filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ledger__spacer {
+  flex: 1;
+}
+
+/* ─── Clear button ───────────────────────────────────────────────── */
+.ledger__clear-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background-color: rgba(240, 96, 96, 0.1);
+  color: var(--color-error);
+  border: 1px solid rgba(240, 96, 96, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.ledger__clear-btn:hover {
+  background-color: rgba(240, 96, 96, 0.18);
+  color: #ff8080;
+}
+
+.ledger__clear-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Search ─────────────────────────────────────────────────────── */
+.ledger__search-wrap {
+  position: relative;
+}
+
+.ledger__search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.ledger__search {
+  padding: 0.5625rem 1rem 0.5625rem 2.25rem;
+  width: 18rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ledger__search::placeholder {
+  color: var(--color-text-muted);
+}
+
+.ledger__search:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(91, 168, 217, 0.06);
+}
+
+/* ─── Period button ──────────────────────────────────────────────── */
+.ledger__period-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5625rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-family: inherit;
+}
+
+.ledger__period-btn:hover {
+  background-color: var(--color-card-hover);
+}
+
+.ledger__period-btn svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* ─── Result count ───────────────────────────────────────────────── */
+.ledger__count {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* ─── Table container ────────────────────────────────────────────── */
+.ledger__table-wrap {
+  flex: 1;
+  background-color: var(--color-card);
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Table header ───────────────────────────────────────────────── */
+.ledger__table-head {
+  display: grid;
+  grid-template-columns: 100px 80px 1fr 140px 110px 90px;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background-color: var(--color-panel);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ledger__table-head-cell {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ledger__table-head-cell--right {
+  text-align: right;
+}
+
+.ledger__table-head-cell--center {
+  text-align: center;
+}
+
+/* ─── Table states ───────────────────────────────────────────────── */
+.ledger__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.25rem;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.ledger__state-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.ledger__state-error {
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
+
+.ledger__state-empty {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* ─── Table body ─────────────────────────────────────────────────── */
+.ledger__table-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ledger__table-row {
+  display: grid;
+  grid-template-columns: 100px 80px 1fr 140px 110px 90px;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.ledger__table-row:last-child {
+  border-bottom: none;
+}
+
+.ledger__table-row:hover {
+  background-color: var(--color-panel);
+}
+
+.ledger__cell-date {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.ledger__cell-type {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.ledger__cell-partner {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ledger__cell-amount {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: right;
+  color: var(--color-text-primary);
+}
+
+.ledger__cell-amount--negative {
+  color: var(--color-error);
+}
+
+.ledger__cell-status {
+  text-align: center;
+}
+
+.ledger__cell-source {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}

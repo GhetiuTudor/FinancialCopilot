@@ -1,0 +1,6 @@
+# ── Frontend build ignores ─────────────────────────────
+node_modules
+dist
+.git
+.gitignore
+*.md

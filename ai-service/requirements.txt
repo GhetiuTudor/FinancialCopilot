@@ -1,0 +1,25 @@
+# ── Core web framework ──────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+
+# ── LLM / Agent ─────────────────────────────────────────────────────
+openai>=1.30
+langchain-openai>=0.3
+langchain-core>=0.3
+langgraph>=0.3
+
+# ── RAG pipeline ─────────────────────────────────────────────────────
+pypdf>=4.0
+sentence-transformers>=2.2
+chromadb>=0.4
+rank-bm25>=0.2.2
+
+# ── TFT forecasting ─────────────────────────────────────────────────
+pandas>=2.0
+pytorch-forecasting>=1.0
+pytorch-lightning>=2.0
+
+# ── Utilities ────────────────────────────────────────────────────────
+python-dotenv>=1.0
+requests>=2.31

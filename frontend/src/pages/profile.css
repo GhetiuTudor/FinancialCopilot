@@ -1,0 +1,276 @@
+/* ═══════════════════════════════════════════════════════════════════
+   PROFILE PAGE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.profile {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem;
+  overflow: auto;
+}
+
+/* ─── Loading state ──────────────────────────────────────────────── */
+.profile__loading {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile__loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-info);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ─── Header ────────────────────────────────────────────────────── */
+.profile__header {
+  margin-bottom: 2rem;
+}
+
+.profile__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25rem 0;
+}
+
+.profile__subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ─── Content wrapper ────────────────────────────────────────────── */
+.profile__content {
+  max-width: 42rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ─── Section card ───────────────────────────────────────────────── */
+.profile-section {
+  background: linear-gradient(
+    160deg,
+    rgba(17, 26, 37, 0.95),
+    rgba(12, 18, 25, 0.85)
+  );
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.4s ease-out both;
+  backdrop-filter: blur(12px);
+}
+
+/* Subtle top glow — same as dashboard-card */
+.profile-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(91, 168, 217, 0.15),
+    transparent
+  );
+}
+
+.profile__content .profile-section:nth-child(1) { animation-delay: 0.02s; }
+.profile__content .profile-section:nth-child(2) { animation-delay: 0.06s; }
+.profile__content .profile-section:nth-child(3) { animation-delay: 0.10s; }
+.profile__content .profile-section:nth-child(4) { animation-delay: 0.14s; }
+
+.profile-section__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 1.25rem 0;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Field grid ─────────────────────────────────────────────────── */
+.profile-section__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .profile-section__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profile-section__grid--single {
+  grid-template-columns: 1fr;
+}
+
+/* ─── Field ──────────────────────────────────────────────────────── */
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.profile-field__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.profile-field__input,
+.profile-field__select {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-input-bg);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.profile-field__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.profile-field__input:focus,
+.profile-field__select:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(91, 168, 217, 0.06);
+}
+
+.profile-field__input:disabled,
+.profile-field__select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Colour the select arrow for dark bg */
+.profile-field__select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b98ab'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem;
+}
+
+/* Select option dark background (browser dependent) */
+.profile-field__select option {
+  background-color: var(--color-panel);
+  color: var(--color-text-primary);
+}
+
+/* ─── Checkbox row ───────────────────────────────────────────────── */
+.profile-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.profile-field__checkbox {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  accent-color: var(--color-info);
+  cursor: pointer;
+}
+
+.profile-field--checkbox .profile-field__label {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  margin: 0;
+}
+
+/* ─── Checkboxes section body ────────────────────────────────────── */
+.profile-section__checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ─── Max-width narrow field (period select) ─────────────────────── */
+.profile-section__narrow {
+  max-width: 14rem;
+  margin-top: 0.75rem;
+}
+
+/* ─── Actions bar ────────────────────────────────────────────────── */
+.profile__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+.profile__save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+  color: var(--color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.profile__save-btn:hover {
+  background: linear-gradient(135deg, var(--color-accent-light), #2d6680);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.profile__save-btn:active {
+  transform: scale(0.97);
+}
+
+.profile__save-btn:disabled {
+  background: var(--color-card);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.profile__save-btn svg {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ─── Success / error feedback ───────────────────────────────────── */
+.profile__feedback {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.profile__feedback--success {
+  color: var(--color-success);
+}
+
+.profile__feedback--error {
+  color: var(--color-error);
+}

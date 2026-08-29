@@ -1,0 +1,293 @@
+openapi: 3.1.0
+info:
+  title: Internal AI Service API
+  version: 1.0.0
+  description: |
+    Internal advisory-only AI service used by the Core (Spring Boot).
+    The AI service MUST NOT mutate canonical state and MUST NOT access the DB directly.
+servers:
+  - url: http://ai-service:8000 #ai service is the container name
+
+tags: # for grouping endpoints in the docs
+  - name: AI
+  - name: Health
+
+paths:
+  /ai/v1/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: #structure of response  
+                type: object
+                properties:
+                  status: { type: string, const: ok }
+                required: [status]
+
+  /ai/v1/analyze:
+    post:
+      tags: [AI]
+      summary: Analyze a question with provided context (advisory-only)
+      operationId: analyze
+      parameters:
+        - name: X-Request-Id
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+        - name: X-Correlation-Id
+          in: header
+          required: true
+          schema: { type: string, minLength: 8 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiAnalyzeRequest"
+      responses:
+        "200":
+          description: Analysis response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiAnalyzeResponse"
+        "400":
+          description: Bad request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiError"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiError"
+
+components: 
+  schemas:
+    Locale:
+      type: string
+      examples: ["ro-RO"]
+
+    IsoDate:
+      type: string
+      format: date
+
+    IsoDateTime:
+      type: string
+      format: date-time
+
+    MoneyMinor: #10.5 lei = 1050 minor units 
+      type: integer
+      description: Signed integer in minor units (e.g., bani). Positive=inflow, Negative=outflow.
+
+    Currency:
+      type: string
+      description: ISO 4217 currency code
+      examples: ["RON", "EUR"]
+
+    TimeRange:
+      type: object
+      properties:
+        from: { $ref: "#/components/schemas/IsoDate" }
+        to: { $ref: "#/components/schemas/IsoDate" }
+      required: [from, to]
+
+    EvidenceRef:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [INVOICE, BANK_TX, LEDGER_ENTRY, COUNTERPARTY, DOCUMENT, SAFT_IMPORT, OTHER]
+        id:
+          type: string
+          format: uuid
+        note:
+          type: string
+          maxLength: 300
+      required: [kind, id]
+
+    RagRef:
+      type: object
+      properties:
+        doc_id: { type: string, format: uuid }
+        chunk_id: { type: string, format: uuid }
+        score: { type: number, minimum: 0, maximum: 1 }
+      required: [doc_id, chunk_id, score]
+
+    CoverageWindow:
+      type: object
+      properties:
+        source_type:
+          type: string
+          enum: [SAFT, SMARTBILL, FGO, TINK, MANUAL]
+        coverage_start: { $ref: "#/components/schemas/IsoDate" }
+        coverage_end: { $ref: "#/components/schemas/IsoDate" }
+        last_successful_sync_at: { $ref: "#/components/schemas/IsoDateTime" }
+        status:
+          type: string
+          enum: [OK, DEGRADED, ERROR, DISCONNECTED]
+      required: [source_type, status]
+
+    SystemContext:
+      type: object
+      description: Operational metadata (time range, source sync coverage).
+      properties:
+        time_range: { $ref: "#/components/schemas/TimeRange" }
+        coverage: 
+          type: array
+          items: { $ref: "#/components/schemas/CoverageWindow" }
+      required: [time_range, coverage]
+
+    FinancialContext:
+      type: object
+      description: Financial reasoning data produced from ledger (facts, profile, references).
+      properties:
+        coverage:
+          type: object
+          properties:
+            as_of: { $ref: "#/components/schemas/IsoDateTime" }
+            window:
+              type: object
+              properties:
+                from: { $ref: "#/components/schemas/IsoDate" }
+                to: { $ref: "#/components/schemas/IsoDate" }
+            sources:
+              type: array
+              items: { type: string }
+        entities:
+          type: object
+          properties:
+            organization_id: { type: string, format: uuid }
+        facts:
+          type: object
+          additionalProperties: true
+        raw_refs:
+          type: array
+          items: { type: object }
+        profile:
+          type: object
+          additionalProperties: true
+
+    AiConstraints:
+      type: object
+      properties:
+        advisory_only:
+          type: boolean
+          const: true
+          description: MUST be true. AI service is advisory-only.
+        allow_external_calls:
+          type: boolean
+          description: Whether the AI service is allowed to call external services (generally false in v1).
+      required: [advisory_only]
+
+    AiAnalyzeRequest:
+      type: object
+      properties:
+        request_id: { type: string, format: uuid }
+        tenant_id:
+          type: string
+          format: uuid
+          description: Organization ID (org_id). Named tenant_id for historical reasons.
+        user_id: { type: string, format: uuid }
+        locale: { $ref: "#/components/schemas/Locale" }
+        as_of: { $ref: "#/components/schemas/IsoDateTime" }
+        question: { type: string, minLength: 1, maxLength: 4000 }
+        system_context: { $ref: "#/components/schemas/SystemContext" }
+        financial_context: { $ref: "#/components/schemas/FinancialContext" }
+        constraints: { $ref: "#/components/schemas/AiConstraints" }
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              role: { type: string }
+              content: { type: string }
+            required: [role, content]
+        thread_id: { type: string }
+      required: [request_id, tenant_id, user_id, locale, as_of, question, system_context, constraints]
+
+    RecommendedAction:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - FOLLOW_UP_CLIENT
+            - FOLLOW_UP_SUPPLIER
+            - REVIEW_CASHFLOW
+            - REVIEW_ANOMALY
+            - REQUEST_SAFT_IMPORT
+            - RECONNECT_BANK
+            - SET_BUDGET_ALERT
+            - OTHER
+        params:
+          type: object
+          additionalProperties: true
+      required: [action]
+
+    InsightType:
+      type: string
+      enum: [CASHFLOW_RISK, ANOMALY, RECOMMENDATION, COMPLIANCE_NOTE, COVERAGE_NOTICE]
+
+    AiInsight:
+      type: object
+      properties:
+        type: { $ref: "#/components/schemas/InsightType" }
+        title: { type: string, maxLength: 140 }
+        summary: { type: string, maxLength: 4000 }
+        risk_score: { type: number, minimum: 0, maximum: 1 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceRef" }
+        actions:
+          type: array
+          items: { $ref: "#/components/schemas/RecommendedAction" }
+      required: [type, title, summary, confidence, evidence]
+
+    TokenUsage:
+      type: object
+      properties:
+        model: { type: string }
+        tokens_in: { type: integer, minimum: 0 }
+        tokens_out: { type: integer, minimum: 0 }
+      required: [model]
+
+    AiAnalyzeResponse:
+      type: object
+      properties:
+        request_id: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [OK, PARTIAL, ERROR]
+        insights:
+          type: array
+          items: { $ref: "#/components/schemas/AiInsight" }
+        answer_text:
+          type: string
+          description: Optional natural-language answer. UI may render both answer_text and insights.
+        usage: { $ref: "#/components/schemas/TokenUsage" }
+        warnings:
+          type: array
+          items: { type: string, maxLength: 300 }
+      required: [request_id, status, insights, usage]
+
+    AiError:
+      type: object
+      properties:
+        request_id: { type: string, format: uuid }
+        code:
+          type: string
+          enum: [VALIDATION_ERROR, INTERNAL_ERROR]
+        message: { type: string, maxLength: 2000 }
+        details:
+          type: object
+          additionalProperties: true
+      required: [code, message]

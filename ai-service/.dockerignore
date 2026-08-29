@@ -1,0 +1,9 @@
+# ── AI service build ignores ───────────────────────────
+venv
+__pycache__
+*.pyc
+.env
+.git
+lightning_logs
+agent_dev.ipynb
+*.md

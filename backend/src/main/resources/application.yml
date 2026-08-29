@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: copilot-backend
+    #datasource bean pt database
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/copilot}
+    username: ${SPRING_DATASOURCE_USERNAME:copilot}
+    password: ${SPRING_DATASOURCE_PASSWORD:copilot}
+    #JDBC Driver default 
+    driver-class-name: org.postgresql.Driver
+    #jpa e layerul de orm - hibernate e default in SpringBoot
+  jpa:
+    hibernate:
+      ddl-auto: validate # schema e managed by flyway  -> validate => entity != schema -> app crash 
+    open-in-view: false   #DB session sta deschisa pana e produs raspunsul
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect  #SQL optimizat pt Postgre
+  flyway: #db migration 
+    enabled: true
+    locations: classpath:db/migration 
+    baseline-on-migrate: true # assume current schema is baseline 
+
+# AI Service configuration
+ai-service:
+  base-url: ${AI_SERVICE_URL:http://ai-service:8000}
+
+management: #acuator health / info
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.fincopilot: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+
+# JWT configuration
+jwt:
+  secret: ${JWT_SECRET:default-dev-secret-change-in-production-minimum-32-chars-long!!}
+  ttl-seconds: ${JWT_TTL_SECONDS:604800}
+

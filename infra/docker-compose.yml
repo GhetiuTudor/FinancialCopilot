@@ -1,0 +1,113 @@
+
+services:
+
+  # ── Database ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: copilot-postgres
+    environment:
+      POSTGRES_DB: copilot
+      POSTGRES_USER: copilot
+      POSTGRES_PASSWORD: copilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - copilot-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U copilot -d copilot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Java Backend ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: copilot-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/copilot}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-copilot}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-copilot}
+      JWT_SECRET: ${JWT_SECRET:-default-dev-secret-change-in-production-minimum-32-chars-long!!}
+      AI_SERVICE_URL: http://ai-service:8000
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - copilot-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Python AI Agent ───────────────────────────────────────────────────
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile
+    container_name: copilot-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2000}
+      MAX_AGENT_ITERATIONS: ${MAX_AGENT_ITERATIONS:-5}
+      # Internal Docker networking — NOT localhost
+      JAVA_BACKEND_URL: http://backend:8080
+      # Response renderer (optional Llama post-processing)
+      RESPONSE_RENDERER: ${RESPONSE_RENDERER:-gpt_only}
+      # host.docker.internal resolves to host machine from inside Docker
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-10}
+      # HuggingFace model cache location inside container
+      HF_HOME: /root/.cache/huggingface
+    volumes:
+      # Mount host HuggingFace model cache → avoids re-downloading 5GB of models
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      # Mount ChromaDB vector store → uses the ingested data from the host
+      - ../ai-service/rag-module/data/vector_store:/app/rag-module/data/vector_store
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - copilot-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/ai/v1/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Frontend (nginx + React SPA) ──────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: copilot-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - copilot-network
+
+networks:
+  copilot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

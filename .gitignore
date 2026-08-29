@@ -1,0 +1,68 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Project-wide .gitignore — Financial Copilot
+# ═══════════════════════════════════════════════════════════════════════
+
+# ── OS files ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDEs ──────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Environment (never commit secrets) ────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Java / Maven ──────────────────────────────────────────────────────
+backend/target/
+*.class
+*.jar
+*.war
+
+# ── Python ────────────────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# ── Jupyter Notebooks ─────────────────────────────────────────────────
+*.ipynb
+
+# ── Node / Frontend ───────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+
+# ── Docker ────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── AI/ML — large model & data files ─────────────────────────────────
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.csv
+lightning_logs/
+ai-service/tft_module/checkpoints/
+ai-service/tft_module/saved_models/
+
+# ── Vector database ───────────────────────────────────────────────────
+data/vector_store/
+ai-service/rag-module/data/vector_store/
+**/.chroma/
+*.sqlite3
+
+# ── Docs (auto-generated architecture docs) ───────────────────────────
+docs/
+
+# ── Test / sample XML data ────────────────────────────────────────────
+SAF_T_FULL_VALID.xml
+SAF_T_NEXGEN.xml
