@@ -42,45 +42,145 @@ ProjectFinancialCopilot/
 ## 🏗️ System Architecture
 
 ```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e1e2e', 'primaryTextColor': '#cdd6f4', 'primaryBorderColor': '#89b4fa', 'lineColor': '#89dceb', 'secondaryColor': '#181825', 'tertiaryColor': '#11111b', 'edgeLabelBackground': '#1e1e2e', 'nodeTextColor': '#cdd6f4', 'clusterBkg': '#181825', 'clusterBorder': '#45475a'}}}%%
 flowchart TD
-    User(["👤 User (Browser)"])
+    Browser(["🌐 Browser\nReact 19 + TypeScript\nTailwind CSS v4"])
 
-    subgraph Frontend ["Frontend — React SPA :3000"]
-        UI["Chat UI / Dashboard / Ledger / Integrations"]
-    end
-
-    subgraph Backend ["Backend — Spring Boot :8080"]
+    subgraph FE["FRONTEND  :3000  —  nginx + Vite SPA"]
         direction TB
-        AuthCtrl["AuthController\n(JWT login/register)"]
-        ChatCtrl["ChatController\n(threads + messages)"]
-        DashCtrl["DashboardController\n(KPIs)"]
-        LedgerCtrl["LedgerController\n(invoices, entries)"]
-        SaftCtrl["SaftImportController\n(XML ingestion)"]
-        IntegCtrl["IntegrationController\n(data sources)"]
-        AiSvc["AiService\n(proxy to Python)"]
-        DB[("PostgreSQL\n(Flyway migrations)")]
-        AuthCtrl & ChatCtrl & DashCtrl & LedgerCtrl & SaftCtrl & IntegCtrl --> DB
-        ChatCtrl --> AiSvc
+        Login["🔐 LoginPage\nRegisterPage"]
+        Dashboard["📊 Dashboard\nKPI Cards + Charts"]
+        Chat["💬 Chat Component\nmessage threads\ntools_used badges"]
+        Ledger["📒 LedgerPage\nInvoice list + filters"]
+        Integrations["🔌 IntegrationsPage\nSAF-T / SmartBill / FGO / Tink"]
+        Profile["👤 ProfilePage\nCompany settings"]
+        APIClient["api/client.ts\nAxios + JWT Bearer\nauto-attach token"]
     end
 
-    subgraph AIService ["AI Service — FastAPI :8000"]
+    subgraph BE["BACKEND  :8080  —  Spring Boot 3.4  Java 21"]
         direction TB
-        Graph["LangGraph Agent\n(ReAct loop)"]
-        Tools["Tools\n• get_ledger_records\n• get_financial_metrics\n• get_tax_summary\n• forecast_vat\n• search_legislation"]
-        RAG["RAG Module\n(ChromaDB + BM25)"]
-        TFT["TFT Module\n(PyTorch Forecasting)"]
-        Renderer["Response Renderer\n(GPT pass-through | Llama)"]
-        Graph -->|"tool_call"| Tools
-        Tools -->|"RAG query"| RAG
-        Tools -->|"forecast request"| TFT
-        Tools -->|"financial data"| AiSvc
-        Graph --> Renderer
+        subgraph Security["Spring Security Layer"]
+            JwtFilter["JwtAuthFilter\nvalidate Bearer token\nextract org_id + user_id"]
+            JwtSvc["JwtService\nHS256  •  7-day TTL\nBCrypt password hash"]
+        end
+
+        subgraph Controllers["REST Controllers"]
+            AuthCtrl["AuthController\nPOST /auth/register\nPOST /auth/login"]
+            ChatCtrl["ChatController\nPOST /chat/threads\nPOST /chat/{id}/messages\nGET  /chat/{id}"]
+            DashCtrl["DashboardController\nGET /dashboard/summary"]
+            LedgerCtrl["LedgerController\nGET /ledger"]
+            SaftCtrl["SaftImportController\nPOST /saft/upload\nmultipart XML"]
+            IntCtrl["IntegrationController\nGET/POST /integrations"]
+        end
+
+        subgraph Services["Service Layer"]
+            ChatSvc["ChatService\nbuild FinancialContext\nforward to AI\npersist reply"]
+            AiProxy["AiService\nWebClient\nPOST /ai/v1/analyze\nX-Request-Id header\nX-Correlation-Id header"]
+            DashSvc["DashboardService"]
+            MetricsSvc["FinancialMetricsService\nrevenue / expenses\nprofit / margin\ncash position"]
+            TaxSvc["TaxEngineService\nVAT 19% + 9% + 5%\nIncome Tax 16%\nMicroenterprise 3%"]
+            LedgerAgg["LedgerAggregationService\njournal aggregation\nbalance sheets"]
+            Reconcile["InvoiceReconciliationService\nbank tx ↔ invoice matching"]
+            SaftSvc["SaftXmlParserService\nJackson XML → entities\naccounts, invoices\ncounterparties, journal"]
+            IntSvc["IntegrationService\nadapter dispatch\nsync run tracking"]
+        end
+
+        subgraph IntAdapters["Integration Adapters"]
+            SmartBill["SmartbillAdapterStub"]
+            FGO["FgoAdapterStub"]
+            Tink["TinkAdapterStub"]
+            SaftAdapter["SaftAdapterStub"]
+        end
+
+        subgraph Context["FinancialContext Builder"]
+            CtxBuilder["LedgerContextPackBuilder\nfacts map\ncoverage windows\nraw_refs\nprofile\ntime_range"]
+        end
+
+        subgraph Internal["Internal Endpoints — AI callbacks only"]
+            IntLedger["InternalLedgerController\nGET /internal/ledger/records"]
+            IntDash["InternalDashboardController\nGET /internal/dashboard/summary"]
+            IntForecast["InternalForecastDataController\nGET /internal/forecast/data"]
+        end
+
+        DB[("🐘 PostgreSQL 16\nFlyway V1–V8 migrations\nchat_threads · chat_messages\nusers · organizations\ninvoices · journal_entries\npayments · counterparties\nintegration_connections\nsaft_imports · company_profile")]
     end
 
-    User -->|"HTTPS"| Frontend
-    Frontend -->|"REST (JWT)"| Backend
-    AiSvc -->|"POST /ai/v1/analyze"| Graph
-    Tools -->|"Internal REST"| Backend
+    subgraph AI["AI SERVICE  :8000  —  FastAPI  Python 3.11"]
+        direction TB
+        FastAPI_App["FastAPI Application\nversion 2.0.0\nGET  /ai/v1/health\nPOST /ai/v1/analyze"]
+
+        subgraph AgentCore["LangGraph Agent — ReAct Loop"]
+            State["AgentState\nTypedDict\nmessages: list\ntools_used: list\niterations: int\ncompany_id: str"]
+
+            subgraph Nodes["Graph Nodes"]
+                LLM_Node["llm_node\nChatOpenAI.bind_tools\ninvoke messages\nincrement iterations"]
+                ToolExec["tool_executor\nToolNode wrapper\ntrack tools_used list\nlog tool name + args"]
+            end
+
+            subgraph Router["Conditional Router"]
+                ShouldCont{"should_continue\n\nhas tool_calls?\niterations >= MAX?"}
+            end
+
+            Start(["START"]) --> LLM_Node
+            LLM_Node --> ShouldCont
+            ShouldCont -->|"tool_calls present"| ToolExec
+            ShouldCont -->|"no calls OR max iter"| End(["END"])
+            ToolExec --> LLM_Node
+        end
+
+        subgraph Prompts["System Prompts"]
+            SysPrompt["AGENT_SYSTEM_PROMPT\nRomanian financial advisor\nadvisory-only constraint\ncurrency RON\nconfidence calibration"]
+            TaxGuardrail["TAX_GUARDRAIL_PROMPT\ninjected if is_tax_intent()\nlegislation citation required\nno tax advice without RAG"]
+        end
+
+        subgraph ToolRegistry["Tool Registry — ALL_TOOLS"]
+            T1["🔧 get_ledger_records\ndate_from, date_to\n→ GET /internal/ledger/records\nreturns: invoices + journal rows"]
+            T2["📈 get_financial_metrics\nyear, month\n→ GET /internal/dashboard/summary\nreturns: revenue, expenses, profit\nmargin, cash, receivables"]
+            T3["🧾 get_tax_summary\nyear, month\n→ TaxEngineService (via backend)\nreturns: VAT, income_tax, total"]
+            T4["🔮 forecast_vat\nmonths_ahead\n→ TFT Module (local Python)\nreturns: P10/P50/P90 quantiles"]
+            T5["📚 search_legislation\nquery string\n→ RAG Module (local Python)\nreturns: ranked chunks + scores"]
+        end
+
+        subgraph Renderer["Response Renderer — Pluggable"]
+            RFactory["RendererFactory\ncreate_renderer(type)"]
+            GPT_R["GptRenderer\npass-through\nno post-processing"]
+            Llama_R["LlamaRenderer\nOllama HTTP client\nllama3 stylistic rewrite\ntimeout: 10s"]
+        end
+
+        subgraph MsgBuilder["Message Builder"]
+            BuildMsg["_build_agent_messages\nSystemMessage: system prompt\n+ tax guardrail if needed\nSystemMessage: financial context\n+ company_id injection\nHumanMessage/AIMessage: history\nHumanMessage: current question"]
+        end
+    end
+
+    subgraph RAG_Box["RAG MODULE"]
+        Chroma[("ChromaDB\nvector store\nall-MiniLM-L6-v2 embeddings")]
+        BM25_Store["BM25 Index\nrank-bm25"]
+    end
+
+    subgraph TFT_Box["TFT MODULE"]
+        TFT_Model["Temporal Fusion\nTransformer\npytorch-forecasting"]
+    end
+
+    Browser -->|"HTTP"| FE
+    FE --> APIClient
+    APIClient -->|"REST + JWT"| JwtFilter
+    JwtFilter --> Controllers
+    Controllers --> Services
+    Services --> DB
+    ChatSvc --> CtxBuilder
+    CtxBuilder --> AiProxy
+    AiProxy -->|"POST /ai/v1/analyze\nFinancialContext payload"| FastAPI_App
+    FastAPI_App --> MsgBuilder
+    MsgBuilder --> AgentCore
+    Prompts --> MsgBuilder
+    AgentCore --> ToolRegistry
+    T1 & T2 & T3 -->|"Internal REST"| Internal
+    Internal --> Services
+    T4 --> TFT_Box
+    T5 --> RAG_Box
+    AgentCore --> Renderer
+    RFactory --> GPT_R & Llama_R
+    IntSvc --> IntAdapters
 ```
 
 ---
@@ -115,20 +215,77 @@ The `should_continue` router also enforces a hard cap (`MAX_AGENT_ITERATIONS`, d
 ### RAG Pipeline
 
 ```mermaid
-flowchart LR
-    PDFs["📄 Codul Fiscal PDFs\n(ai-service/data/)"]
-    Chunker["Document Processor\n(PyPDF + chunking)"]
-    Embedder["Embedding Model\n(sentence-transformers)"]
-    ChromaDB[("ChromaDB\nvector store")]
-    Query["User Question"]
-    BM25["BM25 Sparse\nRetriever"]
-    Hybrid["Hybrid Reranker"]
-    Context["Retrieved Chunks\n→ Agent Context"]
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e1e2e', 'primaryTextColor': '#cdd6f4', 'primaryBorderColor': '#a6e3a1', 'lineColor': '#a6e3a1', 'secondaryColor': '#181825', 'tertiaryColor': '#11111b', 'edgeLabelBackground': '#1e1e2e', 'nodeTextColor': '#cdd6f4', 'clusterBkg': '#181825', 'clusterBorder': '#45475a'}}}%%
+flowchart TD
+    subgraph INGEST["━━━  OFFLINE INGESTION PIPELINE  ━━━  python ingest.py"]
+        direction TB
 
-    PDFs --> Chunker --> Embedder --> ChromaDB
-    Query --> ChromaDB
-    Query --> BM25
-    ChromaDB & BM25 --> Hybrid --> Context
+        PDFs["📄 Source Documents\nai-service/data/\n15× Romanian Codul Fiscal PDFs\n~8 MB total\nTITLUL I–XI + CAPITOLUL"]
+
+        subgraph DocProc["DocumentProcessor\nrag/document_processor.py"]
+            PyPDF["pypdf >= 4.0\npage-by-page text extraction\nUTF-8 decode\nRomanian diacritics preserved"]
+            Splitter["Recursive Text Splitter\nchunk_size = 1000 chars\nchunk_overlap = 200 chars\nsplit on: paragraph → sentence → word"]
+            Meta["Metadata tagging\nsource: filename\nchunk_id: uuid4\npage_num: int"]
+        end
+
+        subgraph EmbedModel["EmbeddingModel\nrag/embeddings.py"]
+            SentTrans["sentence-transformers >= 2.2\nModel: all-MiniLM-L6-v2\n384-dimensional dense vectors\nmax_seq_length: 256 tokens\nCPU inference (no GPU needed)\nbatch_size: 32"]
+        end
+
+        subgraph VecDB["VectorStore\nrag/vector_store.py"]
+            Chroma["ChromaDB >= 0.4\nPersistent local store\nrag-module/data/vector_store/\ncollection: legislation\nHNSW index (cosine similarity)\nstores: embeddings + raw text + metadata"]
+        end
+
+        subgraph BM25_Build["BM25 Index\nrag/keyword_search.py"]
+            BM25["rank-bm25 >= 0.2.2\nBM25Okapi\ntokenize: lower + split\nbuilt over all chunk texts\nin-memory at query time"]
+        end
+
+        PDFs --> PyPDF --> Splitter --> Meta
+        Meta --> SentTrans
+        SentTrans -->|"384-dim vectors"| Chroma
+        Meta -->|"raw text"| BM25
+    end
+
+    subgraph QUERY["━━━  ONLINE QUERY PIPELINE  ━━━  search_legislation(query)"]
+        direction TB
+
+        UserQ["🗣️ User Question\ne.g. 'Care este cota TVA\npentru servicii medicale?'"]
+
+        subgraph Expand["QueryExpander\nrag/query_expander.py"]
+            QExp["Query Expansion\nsynonym expansion\nRomanian legal term mapping\ne.g. TVA → taxa pe valoarea adaugata\ngenerate 2–3 query variants"]
+        end
+
+        subgraph DenseRet["Dense Retrieval\nChromaDB cosine search"]
+            QEmbed["Embed query\nall-MiniLM-L6-v2\n→ 384-dim vector"]
+            TopK_Dense["Top-K Dense Results\nk=10\nHNSW approximate nearest-neighbor\nreturns: chunk_text + cosine_score + metadata"]
+        end
+
+        subgraph SparseRet["Sparse Retrieval\nBM25 keyword search"]
+            BM25Q["BM25Okapi.get_scores(query)\ntokenized query against index\nterm frequency × IDF weighting\nreturns: top-10 chunks by BM25 score"]
+        end
+
+        subgraph Rerank["HybridReranker\nrag/reranker.py"]
+            Normalize["Score Normalization\ndense: min-max scale [0,1]\nsparse: min-max scale [0,1]"]
+            RRF["Reciprocal Rank Fusion\nalpha = 0.5  (dense weight)\n1-alpha = 0.5  (sparse weight)\nfinal_score = α·dense + (1-α)·BM25"]
+            TopN["Top-N Selection\nn=5 final chunks\nde-duplicated by chunk_id\nsorted by hybrid score desc"]
+        end
+
+        subgraph Output["RAG Tool Output → Agent"]
+            Chunks["Retrieved Chunks\n{\n  text: str,\n  source: filename,\n  chunk_id: uuid,\n  score: float 0–1\n}\n× 5 results"]
+            Injected["Injected into Agent Context\nas ToolMessage content\nagent cites source in answer"]
+        end
+
+        UserQ --> Expand
+        Expand -->|"expanded queries"| QEmbed
+        Expand -->|"expanded queries"| BM25Q
+        QEmbed --> TopK_Dense
+        BM25Q --> SparseRet
+        TopK_Dense --> Normalize
+        SparseRet --> Normalize
+        Normalize --> RRF --> TopN --> Chunks --> Injected
+    end
+
+    INGEST -.->|"vector store on disk\n(run once)"| QUERY
 ```
 
 Run ingestion once before starting the agent:
