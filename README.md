@@ -1,4 +1,4 @@
-# 🧠 Financial Copilot
+# Financial Copilot
 
 **An AI-powered financial advisor for SMEs** — ask questions about your company's finances in plain language and get instant, grounded answers backed by your real ledger data, Romanian tax law, and ML-powered VAT forecasting.
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 📸 Overview
+## Overview
 
 Financial Copilot is a full-stack, multi-service application that combines:
 
@@ -20,7 +20,7 @@ Financial Copilot is a full-stack, multi-service application that combines:
 
 ---
 
-## 🗂️ Repository Structure
+## Repository Structure
 
 ```
 ProjectFinancialCopilot/
@@ -39,7 +39,7 @@ ProjectFinancialCopilot/
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e1e2e', 'primaryTextColor': '#cdd6f4', 'primaryBorderColor': '#89b4fa', 'lineColor': '#89dceb', 'secondaryColor': '#181825', 'tertiaryColor': '#11111b', 'edgeLabelBackground': '#1e1e2e', 'nodeTextColor': '#cdd6f4', 'clusterBkg': '#181825', 'clusterBorder': '#45475a'}}}%%
@@ -48,12 +48,12 @@ flowchart TD
 
     subgraph FE["FRONTEND  :3000  —  nginx + Vite SPA"]
         direction TB
-        Login["🔐 LoginPage\nRegisterPage"]
-        Dashboard["📊 Dashboard\nKPI Cards + Charts"]
-        Chat["💬 Chat Component\nmessage threads\ntools_used badges"]
-        Ledger["📒 LedgerPage\nInvoice list + filters"]
-        Integrations["🔌 IntegrationsPage\nSAF-T / SmartBill / FGO / Tink"]
-        Profile["👤 ProfilePage\nCompany settings"]
+        Login[" LoginPage\nRegisterPage"]
+        Dashboard[" Dashboard\nKPI Cards + Charts"]
+        Chat[" Chat Component\nmessage threads\ntools_used badges"]
+        Ledger[" LedgerPage\nInvoice list + filters"]
+        Integrations[" IntegrationsPage\nSAF-T / SmartBill / FGO / Tink"]
+        Profile[" ProfilePage\nCompany settings"]
         APIClient["api/client.ts\nAxios + JWT Bearer\nauto-attach token"]
     end
 
@@ -102,7 +102,7 @@ flowchart TD
             IntForecast["InternalForecastDataController\nGET /internal/forecast/data"]
         end
 
-        DB[("🐘 PostgreSQL 16\nFlyway V1–V8 migrations\nchat_threads · chat_messages\nusers · organizations\ninvoices · journal_entries\npayments · counterparties\nintegration_connections\nsaft_imports · company_profile")]
+        DB[(" PostgreSQL 16\nFlyway V1–V8 migrations\nchat_threads · chat_messages\nusers · organizations\ninvoices · journal_entries\npayments · counterparties\nintegration_connections\nsaft_imports · company_profile")]
     end
 
     subgraph AI["AI SERVICE  :8000  —  FastAPI  Python 3.11"]
@@ -134,11 +134,11 @@ flowchart TD
         end
 
         subgraph ToolRegistry["Tool Registry — ALL_TOOLS"]
-            T1["🔧 get_ledger_records\ndate_from, date_to\n→ GET /internal/ledger/records\nreturns: invoices + journal rows"]
-            T2["📈 get_financial_metrics\nyear, month\n→ GET /internal/dashboard/summary\nreturns: revenue, expenses, profit\nmargin, cash, receivables"]
-            T3["🧾 get_tax_summary\nyear, month\n→ TaxEngineService (via backend)\nreturns: VAT, income_tax, total"]
-            T4["🔮 forecast_vat\nmonths_ahead\n→ TFT Module (local Python)\nreturns: P10/P50/P90 quantiles"]
-            T5["📚 search_legislation\nquery string\n→ RAG Module (local Python)\nreturns: ranked chunks + scores"]
+            T1[" get_ledger_records\ndate_from, date_to\n→ GET /internal/ledger/records\nreturns: invoices + journal rows"]
+            T2[" get_financial_metrics\nyear, month\n→ GET /internal/dashboard/summary\nreturns: revenue, expenses, profit\nmargin, cash, receivables"]
+            T3[" get_tax_summary\nyear, month\n→ TaxEngineService (via backend)\nreturns: VAT, income_tax, total"]
+            T4[" forecast_vat\nmonths_ahead\n→ TFT Module (local Python)\nreturns: P10/P50/P90 quantiles"]
+            T5[" search_legislation\nquery string\n→ RAG Module (local Python)\nreturns: ranked chunks + scores"]
         end
 
         subgraph Renderer["Response Renderer — Pluggable"]
@@ -185,7 +185,7 @@ flowchart TD
 
 ---
 
-## 🤖 AI Agent — Deep Dive
+## AI Agent — Deep Dive
 
 The agent is built on **LangGraph** with a two-node reasoning loop.
 
@@ -220,7 +220,7 @@ flowchart TD
     subgraph INGEST["━━━  OFFLINE INGESTION PIPELINE  ━━━  python ingest.py"]
         direction TB
 
-        PDFs["📄 Source Documents\nai-service/data/\n15× Romanian Codul Fiscal PDFs\n~8 MB total\nTITLUL I–XI + CAPITOLUL"]
+        PDFs[" Source Documents\nai-service/data/\n15× Romanian Codul Fiscal PDFs\n~8 MB total\nTITLUL I–XI + CAPITOLUL"]
 
         subgraph DocProc["DocumentProcessor\nrag/document_processor.py"]
             PyPDF["pypdf >= 4.0\npage-by-page text extraction\nUTF-8 decode\nRomanian diacritics preserved"]
@@ -249,7 +249,7 @@ flowchart TD
     subgraph QUERY["━━━  ONLINE QUERY PIPELINE  ━━━  search_legislation(query)"]
         direction TB
 
-        UserQ["🗣️ User Question\ne.g. 'Care este cota TVA\npentru servicii medicale?'"]
+        UserQ[" User Question\ne.g. 'Care este cota TVA\npentru servicii medicale?'"]
 
         subgraph Expand["QueryExpander\nrag/query_expander.py"]
             QExp["Query Expansion\nsynonym expansion\nRomanian legal term mapping\ne.g. TVA → taxa pe valoarea adaugata\ngenerate 2–3 query variants"]
@@ -372,7 +372,7 @@ Upload via: `POST /api/saft/upload` (multipart XML)
 
 ---
 
-## 💻 Frontend — Deep Dive
+## Frontend — Deep Dive
 
 Built with **React 19**, **TypeScript**, **Vite 5**, and **Tailwind CSS v4**.
 
@@ -406,7 +406,7 @@ src/
 
 ---
 
-## 🚀 Running Locally
+## Running Locally
 
 ### Prerequisites
 
@@ -499,13 +499,13 @@ npm run dev
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 Copy `.env.example` to `.env` (or `infra/.env` for Docker Compose) and fill in your values.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `OPENAI_API_KEY` | ✅ | — | Your OpenAI API key |
+| `OPENAI_API_KEY` |  | — | Your OpenAI API key |
 | `OPENAI_MODEL` | | `gpt-4o-mini` | Model to use for the agent |
 | `LLM_TEMPERATURE` | | `0.2` | LLM sampling temperature |
 | `LLM_MAX_TOKENS` | | `2000` | Max response tokens |
@@ -520,7 +520,7 @@ Copy `.env.example` to `.env` (or `infra/.env` for Docker Compose) and fill in y
 
 ---
 
-## 🛡️ Design Decisions
+##  Design Decisions
 
 ### Advisory-Only AI
 The AI service is **strictly read-only** — it has no database access and cannot mutate any state. All write operations go through the Spring Boot backend. This is enforced via the `AiConstraints.advisory_only = true` field in every request and documented in `contracts/internal-ai.openapi.yaml`.
@@ -536,7 +536,7 @@ After the agent produces an answer, it passes through a **renderer** (`renderers
 
 ---
 
-## 📦 Tech Stack Summary
+##  Tech Stack Summary
 
 | Layer | Technology |
 |-------|-----------|
@@ -551,6 +551,6 @@ After the agent produces an answer, it passes through a **renderer** (`renderers
 
 ---
 
-## 📄 License
+##  License
 
 This project was developed as a Bachelor's thesis project. All rights reserved.
